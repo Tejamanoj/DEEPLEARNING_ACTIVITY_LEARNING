@@ -46,16 +46,17 @@ class DashboardUI:
             parent=camera.ui,
             model='quad',
             scale=(2.0, 0.048),
-            position=(0, 0.476),
+            position=(0, 0.476, 0.05),
             color=rgba32(10, 16, 26, 240)
         )
+        self.header_bg.set_depth_write(False)
         
         # Left: Robot identity
         chassis_name = "HUMANOID" if "HUMANOID" in getattr(self.robot, 'actor_type', '') else "ROVER"
         self.title_text = Text(
             text=f"AUTONOMOUS ROBOT [{chassis_name}]",
             parent=camera.ui,
-            position=(-0.92, 0.485),
+            position=(-0.92, 0.485, -0.05),
             scale=0.86,
             color=rgb32(0, 220, 255),
             origin=(-0.5, 0.5)
@@ -63,7 +64,7 @@ class DashboardUI:
         self.mode_pill = Text(
             text="[AUTO-NAV]",
             parent=camera.ui,
-            position=(-0.52, 0.485),
+            position=(-0.52, 0.485, -0.05),
             scale=0.80,
             color=rgb32(100, 255, 150),
             origin=(-0.5, 0.5)
@@ -73,7 +74,7 @@ class DashboardUI:
         self.top_center_text = Text(
             text="Speed: 0.0 m/s  |  Status: PATH CLEAR  |  Mission: 0.0%",
             parent=camera.ui,
-            position=(-0.24, 0.485),
+            position=(-0.24, 0.485, -0.05),
             scale=0.82,
             color=color.white,
             origin=(-0.5, 0.5)
@@ -83,7 +84,7 @@ class DashboardUI:
         self.top_right_text = Text(
             text="Weather: CLEAR  |  Reward: +0.0 pts",
             parent=camera.ui,
-            position=(0.48, 0.485),
+            position=(0.48, 0.485, -0.05),
             scale=0.80,
             color=rgb32(255, 215, 60),
             origin=(-0.5, 0.5)
@@ -96,14 +97,15 @@ class DashboardUI:
             parent=camera.ui,
             model='quad',
             scale=(1.60, 0.052),
-            position=(0, 0.42),
+            position=(0, 0.42, 0.05),
             color=rgba32(220, 30, 30, 230),
             enabled=False
         )
+        self.emergency_banner_bg.set_depth_write(False)
         self.emergency_banner_text = Text(
-            text="⚠️ ROADWAY INTRUSION ALERT! CROSS ONLY AT ZEBRA CROSSING ⚠️",
+            text="ROADWAY INTRUSION ALERT! CROSS ONLY AT ZEBRA CROSSING",
             parent=camera.ui,
-            position=(0, 0.42),
+            position=(0, 0.42, -0.05),
             scale=0.82,
             color=color.white,
             origin=(0, 0),
@@ -117,13 +119,14 @@ class DashboardUI:
             parent=camera.ui,
             model='quad',
             scale=(1.45, 0.038),
-            position=(0, -0.478),
+            position=(0, -0.478, 0.05),
             color=rgba32(10, 16, 26, 230)
         )
+        self.quick_bar_bg.set_depth_write(False)
         self.quick_bar_text = Text(
             text="[SPACE] Start/Pause  |  [TAB] Options Menu  |  [H] Toggle Detailed Telemetry Cards",
             parent=camera.ui,
-            position=(0, -0.478),
+            position=(0, -0.478, -0.05),
             scale=0.74,
             color=rgb32(180, 220, 245),
             origin=(0, 0)
@@ -134,114 +137,122 @@ class DashboardUI:
         # ══════════════════════════════════════════════════════════════════
         # Top-Left: AI Perception Card
         self.sensor_bg = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.17), position=(-0.60, 0.33),
+            parent=camera.ui, model='quad', scale=(0.58, 0.17), position=(-0.60, 0.33, 0.05),
             color=rgba32(12, 18, 28, 225), enabled=False
         )
+        self.sensor_bg.set_depth_write(False)
         self.sensor_border = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(-0.60, 0.415),
+            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(-0.60, 0.415, 0.01),
             color=rgb32(0, 220, 255), enabled=False
         )
+        self.sensor_border.set_depth_write(False)
         self.sensor_title = Text(
             text="AI SENSOR PERCEPTION & FUSION", parent=camera.ui,
-            position=(-0.87, 0.40), scale=0.74, color=rgb32(0, 220, 255), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, 0.40, -0.05), scale=0.74, color=rgb32(0, 220, 255), origin=(-0.5, 0.5), enabled=False
         )
         self.target_text = Text(
             text="Closest: NONE | Range: --- m", parent=camera.ui,
-            position=(-0.87, 0.37), scale=0.70, color=color.white, origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, 0.37, -0.05), scale=0.70, color=color.white, origin=(-0.5, 0.5), enabled=False
         )
         self.weather_vision_text = Text(
             text="Weather: CLEAR | Vision: 16.0m | Conf: 99%", parent=camera.ui,
-            position=(-0.87, 0.34), scale=0.66, color=rgb32(255, 220, 60), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, 0.34, -0.05), scale=0.66, color=rgb32(255, 220, 60), origin=(-0.5, 0.5), enabled=False
         )
         self.torch_status_text = Text(
-            text="Torch: ON | LiDAR: 360° Sweep | Radar: ACTIVE", parent=camera.ui,
-            position=(-0.87, 0.312), scale=0.64, color=rgb32(180, 225, 245), origin=(-0.5, 0.5), enabled=False
+            text="Torch: ON | LiDAR: 360 Sweep | Radar: ACTIVE", parent=camera.ui,
+            position=(-0.87, 0.312, -0.05), scale=0.64, color=rgb32(180, 225, 245), origin=(-0.5, 0.5), enabled=False
         )
         self.failure_badge_text = Text(
             text="Perception: [NOMINAL]", parent=camera.ui,
-            position=(-0.87, 0.285), scale=0.66, color=rgb32(80, 255, 120), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, 0.285, -0.05), scale=0.66, color=rgb32(80, 255, 120), origin=(-0.5, 0.5), enabled=False
         )
 
         # Top-Right: Safety Rules Engine Card
         self.safety_card_bg = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.17), position=(0.60, 0.33),
+            parent=camera.ui, model='quad', scale=(0.58, 0.17), position=(0.60, 0.33, 0.05),
             color=rgba32(12, 18, 28, 225), enabled=False
         )
+        self.safety_card_bg.set_depth_write(False)
         self.safety_card_border = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(0.60, 0.415),
+            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(0.60, 0.415, 0.01),
             color=rgb32(60, 225, 100), enabled=False
         )
+        self.safety_card_border.set_depth_write(False)
         self.safety_card_title = Text(
             text="SAFETY RULES ENGINE (LIVE COMPLIANCE)", parent=camera.ui,
-            position=(0.33, 0.40), scale=0.74, color=rgb32(60, 225, 100), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, 0.40, -0.05), scale=0.74, color=rgb32(60, 225, 100), origin=(-0.5, 0.5), enabled=False
         )
         self.rule1_text = Text(
             text="R1 Sidewalk: [COMPLIANT] | R2 Zebra: [COMPLIANT]", parent=camera.ui,
-            position=(0.33, 0.37), scale=0.66, color=rgb32(140, 255, 170), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, 0.37, -0.05), scale=0.66, color=rgb32(140, 255, 170), origin=(-0.5, 0.5), enabled=False
         )
         self.rule3_text = Text(
             text="R3 Pedestrian Buffer  : [SAFE CLEARANCE (>2.0m)]", parent=camera.ui,
-            position=(0.33, 0.34), scale=0.66, color=rgb32(140, 255, 170), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, 0.34, -0.05), scale=0.66, color=rgb32(140, 255, 170), origin=(-0.5, 0.5), enabled=False
         )
         self.rule4_text = Text(
             text="R4 Obstacle Detour    : [PATH CLEAR - CENTERLINE]", parent=camera.ui,
-            position=(0.33, 0.312), scale=0.66, color=rgb32(180, 220, 240), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, 0.312, -0.05), scale=0.66, color=rgb32(180, 220, 240), origin=(-0.5, 0.5), enabled=False
         )
         self.forward_corridor_text = Text(
             text="Action: PATH CLEAR (Cruising safe)", parent=camera.ui,
-            position=(0.33, 0.285), scale=0.66, color=rgb32(80, 255, 120), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, 0.285, -0.05), scale=0.66, color=rgb32(80, 255, 120), origin=(-0.5, 0.5), enabled=False
         )
 
         # Bottom-Left: Kinematics & Navigation Card
         self.telemetry_bg = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.13), position=(-0.60, -0.405),
+            parent=camera.ui, model='quad', scale=(0.58, 0.13), position=(-0.60, -0.405, 0.05),
             color=rgba32(12, 18, 28, 225), enabled=False
         )
+        self.telemetry_bg.set_depth_write(False)
         self.telemetry_border = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(-0.60, -0.34),
+            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(-0.60, -0.34, 0.01),
             color=rgb32(0, 215, 255), enabled=False
         )
+        self.telemetry_border.set_depth_write(False)
         self.telemetry_title = Text(
             text="ROBOT KINEMATICS & MISSION", parent=camera.ui,
-            position=(-0.87, -0.355), scale=0.72, color=rgb32(180, 215, 240), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, -0.355, -0.05), scale=0.72, color=rgb32(180, 215, 240), origin=(-0.5, 0.5), enabled=False
         )
         self.speed_text = Text(
             text="Speed: 0.0 m/s (0.0 km/h) | Heading: 0.0°", parent=camera.ui,
-            position=(-0.87, -0.385), scale=0.74, color=color.white, origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, -0.385, -0.05), scale=0.74, color=color.white, origin=(-0.5, 0.5), enabled=False
         )
         self.pos_text = Text(
             text="Position: (8.75, 0.28, -6.00)", parent=camera.ui,
-            position=(-0.87, -0.415), scale=0.66, color=rgb32(190, 205, 220), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, -0.415, -0.05), scale=0.66, color=rgb32(190, 205, 220), origin=(-0.5, 0.5), enabled=False
         )
         self.progress_text = Text(
             text="Mission: GRAND ZEBRA CROSSWALK [0.0%]", parent=camera.ui,
-            position=(-0.87, -0.445), scale=0.70, color=rgb32(0, 220, 255), origin=(-0.5, 0.5), enabled=False
+            position=(-0.87, -0.445, -0.05), scale=0.70, color=rgb32(0, 220, 255), origin=(-0.5, 0.5), enabled=False
         )
 
         # Bottom-Right: RL Rewards & Penalties Card
         self.rl_bg = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.13), position=(0.60, -0.405),
+            parent=camera.ui, model='quad', scale=(0.58, 0.13), position=(0.60, -0.405, 0.05),
             color=rgba32(12, 18, 28, 225), enabled=False
         )
+        self.rl_bg.set_depth_write(False)
         self.rl_border = Entity(
-            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(0.60, -0.34),
+            parent=camera.ui, model='quad', scale=(0.58, 0.003), position=(0.60, -0.34, 0.01),
             color=rgb32(255, 215, 20), enabled=False
         )
+        self.rl_border.set_depth_write(False)
         self.rl_title = Text(
             text="REINFORCEMENT LEARNING REWARD (MDP)", parent=camera.ui,
-            position=(0.33, -0.355), scale=0.72, color=rgb32(255, 215, 20), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, -0.355, -0.05), scale=0.72, color=rgb32(255, 215, 20), origin=(-0.5, 0.5), enabled=False
         )
         self.rl_score_text = Text(
             text="Net Reward: +0.0 pts | Step: +0.00", parent=camera.ui,
-            position=(0.33, -0.385), scale=0.76, color=rgb32(100, 255, 180), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, -0.385, -0.05), scale=0.76, color=rgb32(100, 255, 180), origin=(-0.5, 0.5), enabled=False
         )
         self.rl_breakdown_text = Text(
             text="Rewards: +0.0 | Penalties: -0.0", parent=camera.ui,
-            position=(0.33, -0.415), scale=0.66, color=rgb32(180, 220, 240), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, -0.415, -0.05), scale=0.66, color=rgb32(180, 220, 240), origin=(-0.5, 0.5), enabled=False
         )
         self.rl_penalty_text = Text(
             text="Live Event: EPISODE READY", parent=camera.ui,
-            position=(0.33, -0.445), scale=0.66, color=rgb32(255, 220, 60), origin=(-0.5, 0.5), enabled=False
+            position=(0.33, -0.445, -0.05), scale=0.66, color=rgb32(255, 220, 60), origin=(-0.5, 0.5), enabled=False
         )
 
         # Grouping for detailed HUD toggling
@@ -265,36 +276,39 @@ class DashboardUI:
             parent=camera.ui,
             model='quad',
             scale=(2.1, 1.3),
-            position=(0, 0),
+            position=(0, 0, 0.10),
             color=rgba32(6, 10, 16, 245),
             enabled=False
         )
+        self.menu_backdrop.set_depth_write(False)
         self.menu_widgets.append(self.menu_backdrop)
 
         self.menu_card = Entity(
             parent=camera.ui,
             model='quad',
             scale=(1.30, 0.72),
-            position=(0, 0),
+            position=(0, 0, 0.05),
             color=rgba32(16, 22, 34, 255),
             enabled=False
         )
+        self.menu_card.set_depth_write(False)
         self.menu_widgets.append(self.menu_card)
 
         self.menu_card_top = Entity(
             parent=camera.ui,
             model='quad',
             scale=(1.30, 0.005),
-            position=(0, 0.36),
+            position=(0, 0.36, 0.01),
             color=rgb32(0, 220, 255),
             enabled=False
         )
+        self.menu_card_top.set_depth_write(False)
         self.menu_widgets.append(self.menu_card_top)
 
         self.menu_title = Text(
             text="SIMULATOR OPTIONS & EVALUATION CENTER",
             parent=camera.ui,
-            position=(0, 0.31),
+            position=(0, 0.31, -0.05),
             scale=0.96,
             color=rgb32(0, 220, 255),
             origin=(0, 0),
@@ -305,7 +319,7 @@ class DashboardUI:
         self.menu_subtitle = Text(
             text="Press a number [1 - 8] on your keyboard to instantly select an option:",
             parent=camera.ui,
-            position=(0, 0.27),
+            position=(0, 0.27, -0.05),
             scale=0.72,
             color=rgb32(180, 210, 230),
             origin=(0, 0),
@@ -331,7 +345,7 @@ class DashboardUI:
             t = Text(
                 text=text_str,
                 parent=camera.ui,
-                position=(-0.56, y_pos),
+                position=(-0.56, y_pos, -0.05),
                 scale=0.76,
                 color=text_col,
                 origin=(-0.5, 0.5),
@@ -345,7 +359,7 @@ class DashboardUI:
         self.menu_footer = Text(
             text="[SPACE] Start/Pause Drive  |  [M] Manual Mode  |  [R] Reset  |  Press [TAB] or [ESC] to Close",
             parent=camera.ui,
-            position=(0, -0.30),
+            position=(0, -0.30, -0.05),
             scale=0.72,
             color=rgb32(140, 180, 210),
             origin=(0, 0),
@@ -360,14 +374,15 @@ class DashboardUI:
             parent=camera.ui,
             model='quad',
             scale=(1.60, 0.16),
-            position=(0, 0.04),
+            position=(0, 0.04, 0.05),
             color=rgba32(10, 16, 26, 245),
             enabled=False
         )
+        self.celebration_banner_bg.set_depth_write(False)
         self.celebration_banner_title = Text(
             text="MISSION ACCOMPLISHED! TARGET REACHED!",
             parent=camera.ui,
-            position=(0, 0.08),
+            position=(0, 0.08, -0.05),
             scale=1.20,
             color=rgb32(255, 215, 20),
             origin=(0, 0),
@@ -376,7 +391,7 @@ class DashboardUI:
         self.celebration_banner_sub = Text(
             text="★ Delivery Completed at Central Terminal! +150.0 RL Terminal Reward Awarded! ★",
             parent=camera.ui,
-            position=(0, 0.01),
+            position=(0, 0.01, -0.05),
             scale=0.88,
             color=rgb32(100, 255, 180),
             origin=(0, 0),
@@ -399,6 +414,13 @@ class DashboardUI:
 
     def toggle_options_menu(self):
         """Toggles the simple unified options menu (Key [TAB])."""
+        if hasattr(self, 'arch_modal') and getattr(self.arch_modal, 'is_open', False):
+            self.arch_modal.close()
+        if hasattr(self, 'neural_hud') and getattr(self.neural_hud, 'is_open', False):
+            self.neural_hud.close()
+        if hasattr(self, 'sim_limits_modal') and getattr(self.sim_limits_modal, 'is_open', False):
+            self.sim_limits_modal.close()
+
         self.is_menu_open = not self.is_menu_open
         if self.is_menu_open:
             self._hide_all_hud()
@@ -461,14 +483,26 @@ class DashboardUI:
 
     def toggle_arch_modal(self):
         self.close_options_menu()
+        if hasattr(self, 'neural_hud') and getattr(self.neural_hud, 'is_open', False):
+            self.neural_hud.close()
+        if hasattr(self, 'sim_limits_modal') and getattr(self.sim_limits_modal, 'is_open', False):
+            self.sim_limits_modal.close()
         return self.arch_modal.toggle()
 
     def toggle_neural_hud(self):
         self.close_options_menu()
+        if hasattr(self, 'arch_modal') and getattr(self.arch_modal, 'is_open', False):
+            self.arch_modal.close()
+        if hasattr(self, 'sim_limits_modal') and getattr(self.sim_limits_modal, 'is_open', False):
+            self.sim_limits_modal.close()
         return self.neural_hud.toggle()
 
     def toggle_sim_limits(self):
         self.close_options_menu()
+        if hasattr(self, 'arch_modal') and getattr(self.arch_modal, 'is_open', False):
+            self.arch_modal.close()
+        if hasattr(self, 'neural_hud') and getattr(self.neural_hud, 'is_open', False):
+            self.neural_hud.close()
         return self.sim_limits_modal.toggle()
 
     def set_robot(self, new_robot):

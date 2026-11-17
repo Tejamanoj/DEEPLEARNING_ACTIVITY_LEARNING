@@ -21,9 +21,10 @@ class ArchitectureComparisonModal(Entity):
             parent=self,
             model='quad',
             scale=(2.1, 1.3),
-            position=(0, 0, 0.02),
+            position=(0, 0, 0.10),
             color=rgba32(8, 12, 18, 255)
         )
+        self.backdrop.set_depth_write(False)
         
         # 2. Main Outer Card Frame
         self.card_frame = Entity(
@@ -33,19 +34,23 @@ class ArchitectureComparisonModal(Entity):
             position=(0, 0, 0.05),
             color=rgba32(16, 22, 32, 255)
         )
+        self.card_frame.set_depth_write(False)
         
         # Header border line
-        Entity(parent=self.card_frame, model='quad', scale=(1.0, 0.004), position=(0, 0.40, -0.01), color=rgb32(0, 215, 255))
+        h_line = Entity(parent=self.card_frame, model='quad', scale=(1.0, 0.004), position=(0, 0.40, 0.01), color=rgb32(0, 215, 255))
+        h_line.set_depth_write(False)
         # Center vertical divider
-        Entity(parent=self.card_frame, model='quad', scale=(0.003, 0.72), position=(0, -0.04, -0.01), color=rgba32(80, 100, 130, 180))
+        v_line = Entity(parent=self.card_frame, model='quad', scale=(0.003, 0.72), position=(0, -0.04, 0.01), color=rgba32(80, 100, 130, 180))
+        v_line.set_depth_write(False)
         # Footer border line
-        Entity(parent=self.card_frame, model='quad', scale=(1.0, 0.004), position=(0, -0.40, -0.01), color=rgba32(80, 100, 130, 180))
+        f_line = Entity(parent=self.card_frame, model='quad', scale=(1.0, 0.004), position=(0, -0.40, 0.01), color=rgba32(80, 100, 130, 180))
+        f_line.set_depth_write(False)
 
         # 3. Main Title
         self.title = Text(
             text="AUTONOMOUS DRIVING ARCHITECTURES: MODULAR vs END-TO-END DEEP LEARNING",
             parent=self,
-            position=(0, 0.44),
+            position=(0, 0.44, -0.05),
             scale=1.12,
             color=rgb32(255, 215, 20),
             origin=(0, 0)
@@ -53,7 +58,7 @@ class ArchitectureComparisonModal(Entity):
         self.subtitle = Text(
             text="Deep Learning Experiential Learning Activity | Student 2: Animation, Simulation & Visualization",
             parent=self,
-            position=(0, 0.405),
+            position=(0, 0.405, -0.05),
             scale=0.76,
             color=rgb32(180, 210, 230),
             origin=(0, 0)
@@ -65,7 +70,7 @@ class ArchitectureComparisonModal(Entity):
         self.left_title = Text(
             text="APPROACH 1: MODULAR PIPELINE (INDUSTRY STANDARD)",
             parent=self,
-            position=(-0.44, 0.355),
+            position=(-0.44, 0.355, -0.05),
             scale=0.92,
             color=rgb32(0, 235, 255),
             origin=(0, 0)
@@ -74,34 +79,34 @@ class ArchitectureComparisonModal(Entity):
         modular_content = (
             "1. PIPELINE WORKFLOW:\n"
             "   [Sensors] (Camera, LiDAR, Radar, IMU, GNSS)\n"
-            "       │\n"
+            "       |\n"
             "   [Deep Learning Perception] (YOLOv8 Detection / SegNet)\n"
-            "       │  -> BBoxes, Class Labels, Lane/Curb Segmentation\n"
+            "       |  -> BBoxes, Class Labels, Lane/Curb Segmentation\n"
             "   [Multi-Sensor Fusion] (Kalman Filter / 3D Spatial Map)\n"
-            "       │  -> Dynamic Actor Tracking, State Estimation\n"
+            "       |  -> Dynamic Actor Tracking, State Estimation\n"
             "   [Behavioral Planning & Rules] (Finite State Machine)\n"
-            "       │  -> Corridor Hazard Evaluation, Detour Selection\n"
+            "       |  -> Corridor Hazard Evaluation, Detour Selection\n"
             "   [Control Dynamics] (PID, Pure Pursuit Kinematics)\n"
-            "       │  -> Desired Steering Yaw, Target Linear Speed (m/s)\n"
-            "       ↓\n"
+            "       |  -> Desired Steering Yaw, Target Linear Speed (m/s)\n"
+            "       v\n"
             "   [Vehicle Actuation] (Throttle, Steering, Brake)\n\n"
             "2. DEEP LEARNING MODEL: YOLOv8 (You Only Look Once)\n"
-            "   • Backbone: CSPDarknet with C2f modules extracts multi-scale\n"
+            "   - Backbone: CSPDarknet with C2f modules extracts multi-scale\n"
             "     visual spatial features (P3, P4, P5 feature pyramids).\n"
-            "   • Neck: PANet (Path Aggregation Network) fuses top-down\n"
+            "   - Neck: PANet (Path Aggregation Network) fuses top-down\n"
             "     semantic context with bottom-up localization cues.\n"
-            "   • Head: Decoupled anchor-free heads simultaneously compute\n"
+            "   - Head: Decoupled anchor-free heads simultaneously compute\n"
             "     object classification loss and CIoU bounding box regression.\n\n"
             "3. ARCHITECTURAL EVALUATION:\n"
-            "   • Interpretability : HIGH (Auditable intermediate states)\n"
-            "   • Safety Validation: HIGH (Formal rule supervisor override)\n"
-            "   • Failure Risk     : Error compounding between pipeline stages\n"
-            "   • Production Use   : Waymo, Cruise, Zoox, Baidu Apollo"
+            "   - Interpretability : HIGH (Auditable intermediate states)\n"
+            "   - Safety Validation: HIGH (Formal rule supervisor override)\n"
+            "   - Failure Risk     : Error compounding between pipeline stages\n"
+            "   - Production Use   : Waymo, Cruise, Zoox, Baidu Apollo"
         )
         self.left_text = Text(
             text=modular_content,
             parent=self,
-            position=(-0.84, 0.32),
+            position=(-0.84, 0.32, -0.05),
             scale=0.68,
             color=rgb32(220, 230, 245),
             origin=(-0.5, 0.5)
@@ -113,7 +118,7 @@ class ArchitectureComparisonModal(Entity):
         self.right_title = Text(
             text="APPROACH 2: END-TO-END DEEP LEARNING (IMITATION / RL)",
             parent=self,
-            position=(0.44, 0.355),
+            position=(0.44, 0.355, -0.05),
             scale=0.92,
             color=rgb32(255, 140, 40),
             origin=(0, 0)
@@ -122,35 +127,35 @@ class ArchitectureComparisonModal(Entity):
         e2e_content = (
             "1. PIPELINE WORKFLOW:\n"
             "   [Raw Camera Image Input] (RGB Video Stream I_t)\n"
-            "       │\n"
-            "       ▼\n"
-            "   ┌───────────────────────────────────────────────────┐\n"
-            "   │       DEEP CONVOLUTIONAL NEURAL NETWORK           │\n"
-            "   │  (e.g., NVIDIA PilotNet / MobileNet-V3 / CNN-LSTM)│\n"
-            "   │      Learned Policy: y = f_θ(Image_t)             │\n"
-            "   └───────────────────────────────────────────────────┘\n"
-            "       │\n"
-            "       ▼\n"
-            "   [Direct Control Output] (Steering Angle θ_t, Speed v_t)\n"
-            "       │\n"
-            "       ▼\n"
+            "       |\n"
+            "       v\n"
+            "   +---------------------------------------------------+\n"
+            "   |       DEEP CONVOLUTIONAL NEURAL NETWORK           |\n"
+            "   |  (e.g., NVIDIA PilotNet / MobileNet-V3 / CNN-LSTM)|\n"
+            "   |      Learned Policy: y = f_theta(Image_t)         |\n"
+            "   +---------------------------------------------------+\n"
+            "       |\n"
+            "       v\n"
+            "   [Direct Control Output] (Steering Angle theta_t, Speed v_t)\n"
+            "       |\n"
+            "       v\n"
             "   [Vehicle Actuation] (Steering Motor, Wheel Inverters)\n\n"
             "2. DEEP LEARNING MODEL: NVIDIA PilotNet Architecture\n"
-            "   • Normalization: Hardwired YUV image color conversion.\n"
-            "   • 5 Conv Layers: 3× (5×5 kernel, stride 2) for macro road\n"
-            "     features + 2× (3×3 kernel, non-strided) for boundary cues.\n"
-            "   • 4 Dense Layers: 1164 -> 100 -> 50 -> 10 -> 1 scalar output\n"
+            "   - Normalization: Hardwired YUV image color conversion.\n"
+            "   - 5 Conv Layers: 3x (5x5 kernel, stride 2) for macro road\n"
+            "     features + 2x (3x3 kernel, non-strided) for boundary cues.\n"
+            "   - 4 Dense Layers: 1164 -> 100 -> 50 -> 10 -> 1 scalar output\n"
             "     directly predicting vehicle inverse turning radius (1/r).\n\n"
             "3. ARCHITECTURAL EVALUATION:\n"
-            "   • Interpretability : LOW (Black-box latent representations)\n"
-            "   • Safety Validation: VERY LOW (No formal verification possible)\n"
-            "   • Failure Risk     : Silent catastrophic failure on out-of-dist data\n"
-            "   • Production Status: Tesla FSD v12 (End-to-End Neural Net)"
+            "   - Interpretability : LOW (Black-box latent representations)\n"
+            "   - Safety Validation: VERY LOW (No formal verification possible)\n"
+            "   - Failure Risk     : Silent catastrophic failure on out-of-dist data\n"
+            "   - Production Status: Tesla FSD v12 (End-to-End Neural Net)"
         )
         self.right_text = Text(
             text=e2e_content,
             parent=self,
-            position=(0.04, 0.32),
+            position=(0.04, 0.32, -0.05),
             scale=0.68,
             color=rgb32(245, 230, 220),
             origin=(-0.5, 0.5)
@@ -167,7 +172,7 @@ class ArchitectureComparisonModal(Entity):
         self.footer_text = Text(
             text=footer_summary,
             parent=self,
-            position=(0, -0.42),
+            position=(0, -0.42, -0.05),
             scale=0.70,
             color=rgb32(120, 255, 180),
             origin=(0, 0)

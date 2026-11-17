@@ -55,17 +55,18 @@ class NeuralPerceptionHUD:
             parent=camera.ui,
             model='quad',
             scale=(0.56, 0.72),
-            position=(0.63, 0.08),
+            position=(0.63, 0.08, 0.05),
             color=rgba32(10, 14, 22, 230),
             enabled=False
         )
+        self.panel_bg.set_depth_write(False)
         self._all_widgets.append(self.panel_bg)
 
         # ── Title bar
         self.title = Text(
-            text="╔══ NEURAL PERCEPTION HUD ══╗",
+            text="[ NEURAL PERCEPTION HUD ]",
             parent=camera.ui,
-            position=(0.37, 0.43),
+            position=(0.37, 0.43, -0.05),
             scale=0.80,
             color=rgb32(0, 215, 255),
             origin=(-0.5, 0.5),
@@ -75,9 +76,9 @@ class NeuralPerceptionHUD:
 
         # ── Model telemetry ticker row
         self.ticker = Text(
-            text="Model: YOLOv8n-ADAS | Latency: 11.4ms | Res: 640×640 | FPS: 60",
+            text="Model: YOLOv8n-ADAS | Latency: 11.4ms | Res: 640x640 | FPS: 60",
             parent=camera.ui,
-            position=(0.37, 0.405),
+            position=(0.37, 0.405, -0.05),
             scale=0.68,
             color=rgb32(180, 230, 255),
             origin=(-0.5, 0.5),
@@ -87,9 +88,9 @@ class NeuralPerceptionHUD:
 
         # ── Divider
         self.div1 = Text(
-            text="─────────────────────────────────",
+            text="---------------------------------",
             parent=camera.ui,
-            position=(0.37, 0.385),
+            position=(0.37, 0.385, -0.05),
             scale=0.70,
             color=rgb32(50, 80, 100),
             origin=(-0.5, 0.5),
@@ -99,9 +100,9 @@ class NeuralPerceptionHUD:
 
         # ── Section: Object Detection (YOLOv8)
         self.det_title = Text(
-            text="① YOLO OBJECT DETECTION",
+            text="1. YOLO OBJECT DETECTION",
             parent=camera.ui,
-            position=(0.37, 0.365),
+            position=(0.37, 0.365, -0.05),
             scale=0.76,
             color=rgb32(255, 215, 0),
             origin=(-0.5, 0.5),
@@ -115,7 +116,7 @@ class NeuralPerceptionHUD:
             t = Text(
                 text=f"  [--] ---: ---m | Conf: ---%",
                 parent=camera.ui,
-                position=(0.37, 0.340 - i * 0.030),
+                position=(0.37, 0.340 - i * 0.030, -0.05),
                 scale=0.70,
                 color=rgb32(140, 200, 240),
                 origin=(-0.5, 0.5),
@@ -126,9 +127,9 @@ class NeuralPerceptionHUD:
 
         # ── Divider
         self.div2 = Text(
-            text="─────────────────────────────────",
+            text="---------------------------------",
             parent=camera.ui,
-            position=(0.37, 0.155),
+            position=(0.37, 0.155, -0.05),
             scale=0.70,
             color=rgb32(50, 80, 100),
             origin=(-0.5, 0.5),
@@ -138,9 +139,9 @@ class NeuralPerceptionHUD:
 
         # ── Section: Semantic Segmentation
         self.seg_title = Text(
-            text="② SEMANTIC SEGMENTATION",
+            text="2. SEMANTIC SEGMENTATION",
             parent=camera.ui,
-            position=(0.37, 0.135),
+            position=(0.37, 0.135, -0.05),
             scale=0.76,
             color=rgb32(60, 220, 80),
             origin=(-0.5, 0.5),
@@ -152,9 +153,9 @@ class NeuralPerceptionHUD:
         self.seg_rows = []
         for i, (cls_name, cls_col) in enumerate(self.SEG_CLASSES):
             t = Text(
-                text=f"  ■ {cls_name:<12} [DeepLabV3+ class {i}]",
+                text=f"  * {cls_name:<12} [DeepLabV3+ class {i}]",
                 parent=camera.ui,
-                position=(0.37, 0.108 - i * 0.027),
+                position=(0.37, 0.108 - i * 0.027, -0.05),
                 scale=0.68,
                 color=rgb32(*cls_col),
                 origin=(-0.5, 0.5),
@@ -165,9 +166,9 @@ class NeuralPerceptionHUD:
 
         # ── Divider
         self.div3 = Text(
-            text="─────────────────────────────────",
+            text="---------------------------------",
             parent=camera.ui,
-            position=(0.37, -0.060),
+            position=(0.37, -0.060, -0.05),
             scale=0.70,
             color=rgb32(50, 80, 100),
             origin=(-0.5, 0.5),
@@ -177,9 +178,9 @@ class NeuralPerceptionHUD:
 
         # ── Section: Traffic Sign Recognition
         self.tsr_title = Text(
-            text="③ TRAFFIC SIGN RECOGNITION",
+            text="3. TRAFFIC SIGN RECOGNITION",
             parent=camera.ui,
-            position=(0.37, -0.080),
+            position=(0.37, -0.080, -0.05),
             scale=0.76,
             color=rgb32(40, 220, 220),
             origin=(-0.5, 0.5),
@@ -197,9 +198,9 @@ class NeuralPerceptionHUD:
         for i, (stype, sz) in enumerate(sign_defs):
             label, col = self.SIGN_LABELS[stype]
             t = Text(
-                text=f"  [{label}] z≈{sz:.0f}m | Conf: 97%",
+                text=f"  [{label}] z~{sz:.0f}m | Conf: 97%",
                 parent=camera.ui,
-                position=(0.37, -0.106 - i * 0.028),
+                position=(0.37, -0.106 - i * 0.028, -0.05),
                 scale=0.68,
                 color=rgb32(*col),
                 origin=(-0.5, 0.5),
@@ -210,9 +211,9 @@ class NeuralPerceptionHUD:
 
         # ── Divider
         self.div4 = Text(
-            text="─────────────────────────────────",
+            text="---------------------------------",
             parent=camera.ui,
-            position=(0.37, -0.225),
+            position=(0.37, -0.225, -0.05),
             scale=0.70,
             color=rgb32(50, 80, 100),
             origin=(-0.5, 0.5),
@@ -229,7 +230,7 @@ class NeuralPerceptionHUD:
                 "  Seg:      DeepLabV3+ (ResNet50)"
             ),
             parent=camera.ui,
-            position=(0.37, -0.248),
+            position=(0.37, -0.248, -0.05),
             scale=0.65,
             color=rgb32(130, 150, 170),
             origin=(-0.5, 0.5),
@@ -241,7 +242,7 @@ class NeuralPerceptionHUD:
         self.close_hint = Text(
             text="[N]: Close Neural Perception HUD",
             parent=camera.ui,
-            position=(0.37, -0.365),
+            position=(0.37, -0.365, -0.05),
             scale=0.68,
             color=rgb32(80, 120, 150),
             origin=(-0.5, 0.5),
