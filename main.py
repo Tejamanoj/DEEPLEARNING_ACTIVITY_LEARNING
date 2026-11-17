@@ -154,6 +154,104 @@ is_manual_mode   = False   # M toggles
 show_lasers      = True
 _manual_speed    = 0.0
 _time_acc        = 0.0
+_scenario_index  = -1      # V cycles through scenarios
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO SWITCHER DEFINITIONS (Req 4 – At Least 2 Safe Simulated Scenarios)
+# ─────────────────────────────────────────────────────────────────────────────
+SCENARIOS = [
+    {
+        "name": "SCN-1: CLEAR SIDEWALK CRUISING",
+        "desc": "Nominal ADAS operation on empty East sidewalk at cruise speed.",
+        "robot_pos": (8.75, 0.45, 0.0),
+        "robot_rot": 0.0,
+        "weather":   "clear",
+        "failure":   "NORMAL",
+    },
+    {
+        "name": "SCN-2: ZEBRA CROSSWALK + VEHICLE STOP",
+        "desc": "Robot approaches South zebra crossing & halts for vehicle traffic.",
+        "robot_pos": (8.75, 0.45, 20.0),
+        "robot_rot": 0.0,
+        "weather":   "clear",
+        "failure":   "NORMAL",
+    },
+    {
+        "name": "SCN-3: OBSTACLE DETOUR (CONSTRUCTION BARREL)",
+        "desc": "Barrel blocks path; robot executes lateral avoidance maneuver.",
+        "robot_pos": (8.75, 0.45, 50.0),
+        "robot_rot": 0.0,
+        "weather":   "clear",
+        "failure":   "NORMAL",
+    },
+    {
+        "name": "SCN-4: DENSE FOG + NIGHT TORCH",
+        "desc": "Dense fog degrades vision to 5m; torch spotlight boosts forward detection.",
+        "robot_pos": (8.75, 0.45, 100.0),
+        "robot_rot": 0.0,
+        "weather":   "dense_fog",
+        "failure":   "NORMAL",
+    },
+    {
+        "name": "SCN-5: PERCEPTION FAILURE — FALSE NEGATIVE",
+        "desc": "Neural net misses forward pedestrian; fail-safe supervisor triggers emergency stop.",
+        "robot_pos": (8.75, 0.45, 70.0),
+        "robot_rot": 0.0,
+        "weather":   "clear",
+        "failure":   "FALSE_NEGATIVE",
+    },
+]
+
+def _load_scenario(idx):
+    """Teleport robot into pre-defined scenario and configure systems."""
+    global is_nav_running, is_manual_mode, _manual_speed
+    scn = SCENARIOS[idx]
+    
+    # Stop any active navigation
+    is_nav_running = False
+    is_manual_mode = False
+    _manual_speed  = 0.0
+    robot.speed    = 0.0
+    robot.status   = "IDLE"
+    
+    # Teleport robot
+    rx, ry, rz = scn["robot_pos"]
+    robot.position   = (rx, ry, rz)
+    robot.rotation_y = scn["robot_rot"]
+    
+    # Set weather
+    weather_sys.set_weather(scn["weather"])
+    global weather_index
+    wname = scn["weather"]
+    weather_index = WEATHER_CYCLE.index(wname) if wname in WEATHER_CYCLE else 0
+    if hasattr(robot, 'set_torch_weather_mode'):
+        robot.set_torch_weather_mode(wname)
+    
+    # Set perception failure injection mode
+    fi = getattr(sensor_mgr, 'failure_injector', None)
+    if fi:
+        fi.set_mode(scn["failure"])
+    
+    # Reset safety engine state
+    safety_engine.is_detouring = False
+    safety_engine.detour_stage  = 0
+    safety_engine._ped_yield_timer = 0.0
+    safety_engine.is_crossing_zebra = False
+    safety_engine.roadway_breach_active = False
+    
+    # Reset RL engine for fresh scenario scoring
+    rl_engine.reset()
+    
+    # Update title pill to show active scenario
+    dashboard.mode_pill.text  = f"[{scn['name']}]"
+    dashboard.mode_pill.color = rgb32(255, 185, 30)
+    
+    # Resume auto-nav so the scenario runs immediately
+    navigator.waypoints   = [Vec3(rx, ry, rz), Vec3(rx, ry, rz + 180.0)]
+    navigator.current_idx = 0
+    navigator.is_finished = False
+    navigator.total_path_length = 180.0
+    is_nav_running        = True
 
 # ═══════════════════════════════════════════════════════════════════════════
 # UPDATE
@@ -429,6 +527,12 @@ def input(key):
             dashboard.mode_pill.color = rgb32(210, 100, 255)
         elif new_mode == "MISCLASSIFICATION":
             dashboard.mode_pill.color = rgb32(255, 100, 180)
+
+    # ── Scenario Switcher (Req 4 – At Least 2 Safe Simulated Scenarios) ─
+    elif key == 'v':
+        global _scenario_index
+        _scenario_index = (_scenario_index + 1) % len(SCENARIOS)
+        _load_scenario(_scenario_index)
 
     # ── Help toggle ──────────────────────────────────────────────────────
     elif key == 'h':
