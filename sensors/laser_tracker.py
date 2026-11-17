@@ -72,7 +72,7 @@ class TargetLockTracker(Entity):
             slot["active"] = False
         return self.is_enabled
         
-    def update_targets(self, robot, actors, dt, weather_sys=None):
+    def update_targets(self, robot, actors, dt, weather_sys=None, conf_override=None, active_failure_mode="NORMAL"):
         if not self.is_enabled or not robot:
             return
             
@@ -87,6 +87,9 @@ class TargetLockTracker(Entity):
             effective_range = weather_sys.get_visibility_range()
             base_confidence = weather_sys.get_detection_confidence()
             weather_label = f"[{weather_sys.current_weather}]"
+            
+        if conf_override is not None:
+            base_confidence = conf_override
         
         heading_rad = math.radians(robot.rotation_y)
         fwd_vec = Vec3(math.sin(heading_rad), 0, math.cos(heading_rad))
@@ -109,7 +112,7 @@ class TargetLockTracker(Entity):
             actor_vis_limit = effective_range
             actor_conf = base_confidence
             
-            if is_in_torch:
+            if is_in_torch and conf_override is None:
                 actor_vis_limit = max(effective_range, 13.5)
                 actor_conf = max(base_confidence, 92.0)
                 
@@ -126,9 +129,23 @@ class TargetLockTracker(Entity):
             slot["active"] = True
             
             actor_center = Vec3(actor.x, actor.y + actor.height * 0.5, actor.z)
+            is_phantom = getattr(actor, 'is_phantom', False)
+            is_misclassified = "[MISCLASSIFIED" in getattr(actor, 'name', '')
             
             # Determine threat color based on distance: GREEN -> YELLOW -> RED
-            if dist < 3.2:
+            if is_phantom:
+                theme_color = rgb32(255, 140, 20) # ORANGE
+                status_label = "PHANTOM GHOST DETECTION"
+                beam_thickness = 0.05
+            elif active_failure_mode == "HIGH_UNCERTAINTY":
+                theme_color = rgb32(210, 80, 255) # MAGENTA / UNCERTAINTY
+                status_label = "HIGH UNCERTAINTY"
+                beam_thickness = 0.05
+            elif is_misclassified:
+                theme_color = rgb32(255, 100, 180) # PINK / MISCLASSIFICATION
+                status_label = "LABEL CONFUSION"
+                beam_thickness = 0.055
+            elif dist < 3.2:
                 # Critical Danger Stop: RED
                 theme_color = rgb32(255, 30, 30)
                 status_label = "CRITICAL PROXIMITY - STOP"
@@ -172,13 +189,22 @@ class TargetLockTracker(Entity):
             # Fitted bounding box size per actor type
             actor_type = getattr(actor, 'actor_type', '')
             if actor_type == 'VEHICLE':
-                bbox.scale = (2.2, 1.6, 4.4)
+                box_w, box_h, box_d = 2.2, 1.6, 4.4
             elif actor_type == 'BICYCLE':
-                bbox.scale = (0.8, 1.8, 1.8)
+                box_w, box_h, box_d = 0.8, 1.8, 1.8
             elif actor_type == 'OBSTACLE':
-                bbox.scale = (0.9, 1.25, 0.9)
+                box_w, box_h, box_d = 0.9, 1.25, 0.9
             else: # PEDESTRIAN
-                bbox.scale = (0.85, 2.0, 0.85)
+                box_w, box_h, box_d = 0.85, 2.0, 0.85
+                
+            # Jitter bounding box in high uncertainty mode
+            if active_failure_mode == "HIGH_UNCERTAINTY":
+                jitter_amt = math.sin(dist * 5.0 + (robot.walk_time if hasattr(robot, 'walk_time') else 0) * 10.0) * 0.18
+                box_w += jitter_amt
+                box_d += jitter_amt
+                bbox.position = Vec3(actor_center.x + jitter_amt * 0.3, actor_center.y, actor_center.z)
+                
+            bbox.scale = (box_w, box_h, box_d)
                 
             if hasattr(actor, 'rotation_y'):
                 bbox.rotation_y = actor.rotation_y
@@ -189,7 +215,16 @@ class TargetLockTracker(Entity):
             tag.color = theme_color
             tag.position = Vec3(actor.x, actor.y + actor.height + 0.35, actor.z)
             torch_tag = " (TORCH)" if is_in_torch else ""
-            tag.text = f"[{actor.actor_type}: {dist:.1f}m | Conf: {int(actor_conf)}%{torch_tag}]"
+            
+            if is_phantom:
+                tag.text = f"[GHOST OBSTACLE: {dist:.1f}m | Conf: 88% (HALLUCINATION)]"
+            elif is_misclassified:
+                tag.text = f"[PED -> CLASSIFIED AS OBSTACLE: {dist:.1f}m | Conf: 91%]"
+            elif active_failure_mode == "HIGH_UNCERTAINTY":
+                tag.text = f"[{actor.actor_type}: {dist:.1f}m | UNCERTAIN Conf: {int(actor_conf)}%]"
+            else:
+                tag.text = f"[{actor.actor_type}: {dist:.1f}m | Conf: {int(actor_conf)}%{torch_tag}]"
+                
             # Always face camera
             tag.look_at(camera.world_position)
             tag.rotation_y += 180 # Text faces camera properly

@@ -46,11 +46,21 @@ class SafetyRulesEngine:
             "RULE_5_SPEED_COMPLIANCE": "COMPLIANT",
         }
         
-    def evaluate(self, robot, actors, dt):
+    def evaluate(self, robot, actors, dt, failure_injector=None):
         pos = robot.position
         heading_rad = math.radians(robot.rotation_y)
         fwd_vec = Vec3(math.sin(heading_rad), 0, math.cos(heading_rad))
         right_vec = Vec3(math.cos(heading_rad), 0, -math.sin(heading_rad))
+        
+        # 0. LOW-LEVEL SAFETY SUPERVISOR (FAIL-SAFE PROXIMITY BARRIER)
+        if failure_injector and getattr(failure_injector, 'safety_supervisor_tripped', False):
+            self.safety_action = "EMERGENCY_STOP"
+            self.active_alert_message = (
+                "⚠️ FAIL-SAFE SUPERVISOR OVERRIDE! Neural perception missed obstacle; "
+                "hardware proximity barrier engaged emergency stop! ⚠️"
+            )
+            self.rule_statuses["RULE_4_FORWARD_CLEARANCE"] = "OVERRIDE - EMERGENCY PROXIMITY"
+            return ("EMERGENCY_STOP", 0.0, robot.rotation_y)
         
         # 1. RULES 1 & 2: SIDEWALK BOUNDARIES & STRICT ZEBRA CROSSING ENFORCEMENT
         # Right sidewalk is x >= 6.35, Left sidewalk is x <= -6.35
@@ -261,6 +271,14 @@ class SafetyRulesEngine:
         # PATH CLEAR
         self.rule_statuses["RULE_4_FORWARD_CLEARANCE"] = "COMPLIANT"
         self.rule_statuses["RULE_3_PEDESTRIAN_BUFFER"] = "COMPLIANT"
+        
+        # Uncertainty speed throttling safety policy
+        if failure_injector and getattr(failure_injector, 'active_mode', '') == 'HIGH_UNCERTAINTY':
+            self.rule_statuses["RULE_5_SPEED_COMPLIANCE"] = "CAUTIOUS CRAWL (UNCERTAINTY CAP: 0.5 m/s)"
+            self.active_alert_message = "HIGH UNCERTAINTY INJECTED: Epistemic ambiguity caps speed to 0.5 m/s"
+            self.safety_action = "PROCEED_SAFE"
+            return ("PROCEED_SAFE", 0.35, robot.rotation_y)
+            
         self.safety_action = "PROCEED_SAFE"
         self.active_alert_message = "PATH CLEAR - ALL SAFETY RULES COMPLIANT"
         return ("PROCEED_SAFE", 1.6, robot.rotation_y)

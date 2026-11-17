@@ -20,6 +20,7 @@ class DashboardUI:
         self.show_help = True
         self.alert_flash_timer = 0.0
         self.celebration_timer = 0.0
+        self._failure_badge_pulse = 0.0
         
         # Architecture Comparison Screen (Modular vs End-to-End Deep Learning)
         self.arch_modal = ArchitectureComparisonModal()
@@ -192,8 +193,8 @@ class DashboardUI:
         self.sensor_bg = Entity(
             parent=camera.ui,
             model='quad',
-            scale=(0.68, 0.23),
-            position=(-0.54, 0.28),
+            scale=(0.68, 0.27),
+            position=(-0.54, 0.265),
             color=rgba32(16, 20, 28, 210)
         )
         
@@ -239,6 +240,24 @@ class DashboardUI:
             position=(-0.86, 0.22),
             scale=0.72,
             color=rgb32(180, 230, 255),
+            origin=(-0.5, 0.5)
+        )
+        
+        # Perception Failure Injection badge (Step 2 – key [U])
+        self.failure_badge_bg = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(0.68, 0.045),
+            position=(-0.54, 0.165),
+            color=rgba32(16, 20, 28, 220),
+            enabled=True
+        )
+        self.failure_badge_text = Text(
+            text="[PERCEPTION: NOMINAL] [U]: Cycle Failure Injection Mode",
+            parent=camera.ui,
+            position=(-0.86, 0.17),
+            scale=0.72,
+            color=rgb32(80, 255, 120),
             origin=(-0.5, 0.5)
         )
         
@@ -331,6 +350,8 @@ class DashboardUI:
             "[T]        : Toggle Torch Spotlight\n"
             "[I] / [TAB]: Compare AI Architectures\n"
             "             (Modular vs End-to-End DL)\n"
+            "[U]        : Cycle Perception Failures\n"
+            "             (False-Neg/Positive/Delay…)\n"
             "[B]        : Toggle 3D Laser Trackers\n"
             "[R]        : Reset Robot to Start\n"
             "[H]        : Toggle Controls Card"
@@ -405,7 +426,7 @@ class DashboardUI:
         
         self.cam_pill.text = f"[CAM: {self.camera_ctrl.mode}]"
         
-        # Sensor & Weather Vision Telemetry
+        # Sensor & Weather Vision Telemetry + Perception Failure Badge
         if self.sensor_mgr:
             d = self.sensor_mgr.closest_object_distance
             d_str = f"{d:.1f} m" if d < 100 else "--- m"
@@ -419,6 +440,50 @@ class DashboardUI:
             torch_active = getattr(self.robot, 'torch_enabled', True)
             torch_str = "ON (Illuminating Corridor)" if torch_active else "OFF"
             self.torch_status_text.text = f"Robot Torch: {torch_str} | LiDAR: 360° | Radar: ON"
+            
+            # Update perception failure injection badge
+            fi = getattr(self.sensor_mgr, 'failure_injector', None)
+            if fi:
+                self.alert_flash_timer += 0  # already ticked
+                mode = fi.active_mode
+                details = fi.get_details()
+                badge_text = details["badge"]
+                col = details["color"]
+                badge_color = rgb32(*col)
+                
+                if mode == "NORMAL":
+                    self.failure_badge_text.text = f"{badge_text} | [U]: Cycle Failure Injection"
+                    self.failure_badge_text.color = rgb32(80, 255, 120)
+                    self.failure_badge_bg.color = rgba32(16, 20, 28, 220)
+                elif mode == "FALSE_NEGATIVE":
+                    supervisor = getattr(fi, 'safety_supervisor_tripped', False)
+                    sup_tag = " ⚠️ SUPERVISOR OVERRIDE!" if supervisor else ""
+                    self.failure_badge_text.text = f"{badge_text}: Obstacle suppressed{sup_tag}"
+                    self.failure_badge_text.color = badge_color
+                    pulse_a = int(200 + 55 * math.sin(self.alert_flash_timer * 5.0))
+                    self.failure_badge_bg.color = rgba32(80, 10, 10, pulse_a)
+                elif mode == "FALSE_POSITIVE":
+                    self.failure_badge_text.text = f"{badge_text}: Phantom obstacle 2.8m ahead!"
+                    self.failure_badge_text.color = badge_color
+                    pulse_a = int(200 + 55 * math.sin(self.alert_flash_timer * 4.0))
+                    self.failure_badge_bg.color = rgba32(80, 40, 5, pulse_a)
+                elif mode == "LATENCY_DELAY":
+                    self.failure_badge_text.text = f"{badge_text}: 450ms inference lag active"
+                    self.failure_badge_text.color = badge_color
+                    self.failure_badge_bg.color = rgba32(60, 50, 10, 220)
+                elif mode == "HIGH_UNCERTAINTY":
+                    conf_val = int(v_conf) if fi.simulated_conf_override else 99
+                    self.failure_badge_text.text = f"{badge_text}: Conf={conf_val}% | Speed capped to 0.5m/s"
+                    self.failure_badge_text.color = badge_color
+                    pulse_a = int(200 + 55 * math.sin(self.alert_flash_timer * 7.0))
+                    self.failure_badge_bg.color = rgba32(55, 15, 70, pulse_a)
+                elif mode == "MISCLASSIFICATION":
+                    self.failure_badge_text.text = f"{badge_text}: PED label swapped to OBSTACLE"
+                    self.failure_badge_text.color = badge_color
+                    self.failure_badge_bg.color = rgba32(60, 20, 40, 220)
+                    
+                self.failure_badge_text.enabled = True
+                self.failure_badge_bg.enabled = True
             
         # RL Telemetry
         if self.rl_engine:

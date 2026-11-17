@@ -239,8 +239,11 @@ def update():
     elif is_nav_running and not navigator.is_finished:
         # ── AUTO-NAVIGATION ─────────────────────────────────────────────
         all_actors = actor_mgr.get_all_trackable_actors()
+        # Use perceived_actors from sensor_mgr (which applies failure injection)
+        perceived = getattr(sensor_mgr, 'perceived_actors', all_actors) or all_actors
+        failure_injector = getattr(sensor_mgr, 'failure_injector', None)
         safety_action, speed_mult, target_heading = safety_engine.evaluate(
-            robot, all_actors, dt
+            robot, perceived, dt, failure_injector=failure_injector
         )
 
         # Apply weather speed cap
@@ -403,6 +406,25 @@ def input(key):
     # ── Architecture Comparison Screen (Modular vs End-to-End DL) ──────
     elif key in ('i', 'tab'):
         dashboard.toggle_arch_modal()
+
+    # ── Perception Failure Injection Mode (Req 7 & 8) ───────────────────
+    elif key == 'u':
+        new_mode = sensor_mgr.cycle_failure_mode()
+        details = sensor_mgr.get_failure_mode_details()
+        # Flash title pill briefly to confirm mode switch
+        dashboard.mode_pill.text = f"[INJECTION: {new_mode}]"
+        if new_mode == "NORMAL":
+            dashboard.mode_pill.color = rgb32(100, 255, 150)
+        elif new_mode == "FALSE_NEGATIVE":
+            dashboard.mode_pill.color = rgb32(255, 60, 60)
+        elif new_mode == "FALSE_POSITIVE":
+            dashboard.mode_pill.color = rgb32(255, 160, 40)
+        elif new_mode == "LATENCY_DELAY":
+            dashboard.mode_pill.color = rgb32(255, 220, 50)
+        elif new_mode == "HIGH_UNCERTAINTY":
+            dashboard.mode_pill.color = rgb32(210, 100, 255)
+        elif new_mode == "MISCLASSIFICATION":
+            dashboard.mode_pill.color = rgb32(255, 100, 180)
 
     # ── Help toggle ──────────────────────────────────────────────────────
     elif key == 'h':
