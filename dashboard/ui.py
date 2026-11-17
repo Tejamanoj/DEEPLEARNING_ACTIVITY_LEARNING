@@ -9,6 +9,7 @@ from ursina.color import rgb32, rgba32
 import math
 from .architecture_modal import ArchitectureComparisonModal
 from .neural_hud import NeuralPerceptionHUD
+from .sim_limitations import SimLimitationsModal
 
 class DashboardUI:
     def __init__(self, robot, camera_ctrl, navigator, sensor_mgr=None, safety_engine=None, rl_engine=None):
@@ -28,6 +29,9 @@ class DashboardUI:
         
         # Neural Perception HUD (key [N]) — YOLOv8 detections + Segmentation + TSR
         self.neural_hud = NeuralPerceptionHUD()
+        
+        # Simulation Limitations & Sim-to-Real Gap (key [L]) — Req 8
+        self.sim_limits_modal = SimLimitationsModal()
         
         # 1. Top Header Bar
         self.header_bg = Entity(
@@ -358,6 +362,8 @@ class DashboardUI:
             "             (Modular vs End-to-End DL)\n"
             "[N]        : Neural Perception HUD\n"
             "             (YOLO + Seg + TSR Panel)\n"
+            "[L]        : Sim Limitations\\n"
+            "             (Sim-to-Real / Req 8)\\n"
             "[U]        : Cycle Perception Failures\n"
             "             (False-Neg/Pos/Delay…)\n"
             "[B]        : Toggle 3D Laser Trackers\n"
@@ -420,6 +426,12 @@ class DashboardUI:
         """Toggles the Neural Perception HUD (Req 2 – YOLOv8 detections, Segmentation, TSR)."""
         if hasattr(self, 'neural_hud'):
             return self.neural_hud.toggle()
+        return False
+        
+    def toggle_sim_limits(self):
+        """Toggles the Simulation Limitations & Sim-to-Real Gap modal (Req 8)."""
+        if hasattr(self, 'sim_limits_modal'):
+            return self.sim_limits_modal.toggle()
         return False
         
     def update(self, dt):

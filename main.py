@@ -509,6 +509,10 @@ def input(key):
     elif key == 'n':
         dashboard.toggle_neural_hud()
 
+    # ── Simulation Limitations & Sim-to-Real Gap (Req 8) ────────────────
+    elif key == 'l':
+        dashboard.toggle_sim_limits()
+
     # ── Perception Failure Injection Mode (Req 7 & 8) ───────────────────
     elif key == 'u':
         new_mode = sensor_mgr.cycle_failure_mode()
@@ -543,6 +547,8 @@ def input(key):
             dashboard.arch_modal.close()
         elif hasattr(dashboard, 'neural_hud') and dashboard.neural_hud.is_open:
             dashboard.neural_hud.close()
+        elif hasattr(dashboard, 'sim_limits_modal') and dashboard.sim_limits_modal.is_open:
+            dashboard.sim_limits_modal.close()
         else:
             application.quit()
 
