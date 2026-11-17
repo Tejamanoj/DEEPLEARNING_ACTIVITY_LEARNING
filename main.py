@@ -245,6 +245,7 @@ def _load_scenario(idx):
     # Update title pill to show active scenario
     dashboard.mode_pill.text  = f"[{scn['name']}]"
     dashboard.mode_pill.color = rgb32(255, 185, 30)
+    dashboard.update_scenario_menu_text(scn['name'])
     
     # Resume auto-nav so the scenario runs immediately
     navigator.waypoints   = [Vec3(rx, ry, rz), Vec3(rx, ry, rz + 180.0)]
@@ -416,9 +417,57 @@ def update():
 # ═══════════════════════════════════════════════════════════════════════════
 
 def input(key):
-    global is_nav_running, is_manual_mode, weather_index, show_lasers
+    global is_nav_running, is_manual_mode, weather_index, show_lasers, _scenario_index
 
-    # ── Navigation ──────────────────────────────────────────────────────
+    # ── If Options Menu is open, numbers [1-8] trigger menu options directly ──
+    if getattr(dashboard, 'is_menu_open', False):
+        if key == '1':
+            weather_index = (weather_index + 1) % len(WEATHER_CYCLE)
+            w_name = WEATHER_CYCLE[weather_index]
+            weather_sys.set_weather(w_name)
+            if hasattr(robot, 'set_torch_weather_mode'):
+                robot.set_torch_weather_mode(w_name)
+            dashboard._refresh_menu_display()
+            return
+        elif key == '2':
+            _scenario_index = (_scenario_index + 1) % len(SCENARIOS)
+            _load_scenario(_scenario_index)
+            dashboard._refresh_menu_display()
+            return
+        elif key == '3':
+            sensor_mgr.cycle_failure_mode()
+            dashboard._refresh_menu_display()
+            return
+        elif key == '4':
+            dashboard.close_options_menu()
+            dashboard.toggle_neural_hud()
+            return
+        elif key == '5':
+            dashboard.close_options_menu()
+            dashboard.toggle_arch_modal()
+            return
+        elif key == '6':
+            dashboard.close_options_menu()
+            dashboard.toggle_sim_limits()
+            return
+        elif key == '7':
+            cam_ctrl.next_mode()
+            dashboard._refresh_menu_display()
+            return
+        elif key == '8':
+            dashboard.toggle_detailed_hud()
+            dashboard._refresh_menu_display()
+            return
+        elif key in ('tab', 'escape'):
+            dashboard.close_options_menu()
+            return
+
+    # ── Universal Keys (Always Active) ───────────────────────────────────
+    if key == 'tab':
+        dashboard.toggle_options_menu()
+        return
+
+    # ── Navigation Start / Pause ─────────────────────────────────────────
     if key == 'space':
         if is_manual_mode:
             is_manual_mode = False
@@ -436,7 +485,7 @@ def input(key):
             is_nav_running = False
         robot.speed = 0.0
 
-    # ── Camera modes ────────────────────────────────────────────────────
+    # ── Camera Modes ────────────────────────────────────────────────────
     elif key == '1':
         cam_ctrl.set_mode_by_name("BACK_OF_BOT")
     elif key == '2':
@@ -446,13 +495,13 @@ def input(key):
     elif key == 'c':
         cam_ctrl.next_mode()
 
-    # ── Scroll zoom ─────────────────────────────────────────────────────
+    # ── Scroll Zoom ─────────────────────────────────────────────────────
     elif key == 'scroll up':
         cam_ctrl.handle_scroll(+1)
     elif key == 'scroll down':
         cam_ctrl.handle_scroll(-1)
 
-    # ── Weather ─────────────────────────────────────────────────────────
+    # ── Weather Cycle ───────────────────────────────────────────────────
     elif key == 'f':
         weather_index = (weather_index + 1) % len(WEATHER_CYCLE)
         w_name = WEATHER_CYCLE[weather_index]
@@ -479,11 +528,11 @@ def input(key):
             for p in objects.celebration.particles:
                 p.enabled = False
 
-    # ── Laser toggle ─────────────────────────────────────────────────────
+    # ── Laser targeting toggle ───────────────────────────────────────────
     elif key == 'b':
         sensor_mgr.laser_tracker.toggle()
 
-    # ── Reset ────────────────────────────────────────────────────────────
+    # ── Reset to Start ───────────────────────────────────────────────────
     elif key == 'r':
         navigator.reset()
         safety_engine.is_detouring = False
@@ -501,50 +550,32 @@ def input(key):
         robot.speed    = 0.0
         robot.status   = "IDLE"
 
-    # ── Architecture Comparison Screen (Modular vs End-to-End DL) ──────
-    elif key in ('i', 'tab'):
+    # ── Direct Modal Shortcuts (Still work directly!) ───────────────────
+    elif key == 'i':
         dashboard.toggle_arch_modal()
-
-    # ── Neural Perception HUD (YOLOv8 Detections + Segmentation + TSR) ─
     elif key == 'n':
         dashboard.toggle_neural_hud()
-
-    # ── Simulation Limitations & Sim-to-Real Gap (Req 8) ────────────────
     elif key == 'l':
         dashboard.toggle_sim_limits()
 
-    # ── Perception Failure Injection Mode (Req 7 & 8) ───────────────────
+    # ── Direct Failure Injection Shortcut ───────────────────────────────
     elif key == 'u':
         new_mode = sensor_mgr.cycle_failure_mode()
-        details = sensor_mgr.get_failure_mode_details()
-        # Flash title pill briefly to confirm mode switch
-        dashboard.mode_pill.text = f"[INJECTION: {new_mode}]"
-        if new_mode == "NORMAL":
-            dashboard.mode_pill.color = rgb32(100, 255, 150)
-        elif new_mode == "FALSE_NEGATIVE":
-            dashboard.mode_pill.color = rgb32(255, 60, 60)
-        elif new_mode == "FALSE_POSITIVE":
-            dashboard.mode_pill.color = rgb32(255, 160, 40)
-        elif new_mode == "LATENCY_DELAY":
-            dashboard.mode_pill.color = rgb32(255, 220, 50)
-        elif new_mode == "HIGH_UNCERTAINTY":
-            dashboard.mode_pill.color = rgb32(210, 100, 255)
-        elif new_mode == "MISCLASSIFICATION":
-            dashboard.mode_pill.color = rgb32(255, 100, 180)
+        dashboard.mode_pill.text = f"[{new_mode}]"
 
-    # ── Scenario Switcher (Req 4 – At Least 2 Safe Simulated Scenarios) ─
+    # ── Direct Scenario Switcher Shortcut ───────────────────────────────
     elif key == 'v':
-        global _scenario_index
         _scenario_index = (_scenario_index + 1) % len(SCENARIOS)
         _load_scenario(_scenario_index)
 
-    # ── Help toggle ──────────────────────────────────────────────────────
+    # ── Detailed 4-Card HUD Toggle ──────────────────────────────────────
     elif key == 'h':
-        dashboard.toggle_help()
+        dashboard.toggle_detailed_hud()
 
+    # ── Escape Key: Dismiss any active modal/menu first, or quit ─────────
     elif key == 'escape':
-        if hasattr(dashboard, 'show_help') and dashboard.show_help:
-            dashboard.toggle_help()
+        if getattr(dashboard, 'is_menu_open', False):
+            dashboard.close_options_menu()
         elif hasattr(dashboard, 'arch_modal') and dashboard.arch_modal.is_open:
             dashboard.arch_modal.close()
         elif hasattr(dashboard, 'neural_hud') and dashboard.neural_hud.is_open:
