@@ -400,12 +400,19 @@ def input(key):
         robot.speed    = 0.0
         robot.status   = "IDLE"
 
+    # ── Architecture Comparison Screen (Modular vs End-to-End DL) ──────
+    elif key in ('i', 'tab'):
+        dashboard.toggle_arch_modal()
+
     # ── Help toggle ──────────────────────────────────────────────────────
     elif key == 'h':
         dashboard.toggle_help()
 
     elif key == 'escape':
-        application.quit()
+        if hasattr(dashboard, 'arch_modal') and dashboard.arch_modal.is_open:
+            dashboard.arch_modal.close()
+        else:
+            application.quit()
 
 
 # ═══════════════════════════════════════════════════════════════════════════

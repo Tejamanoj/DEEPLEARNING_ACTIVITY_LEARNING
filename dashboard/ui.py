@@ -7,6 +7,7 @@ and interactive control guidance. Optimized for 1080p and 4K displays.
 from ursina import Entity, camera, color, Vec2, Text, window
 from ursina.color import rgb32, rgba32
 import math
+from .architecture_modal import ArchitectureComparisonModal
 
 class DashboardUI:
     def __init__(self, robot, camera_ctrl, navigator, sensor_mgr=None, safety_engine=None, rl_engine=None):
@@ -19,6 +20,9 @@ class DashboardUI:
         self.show_help = True
         self.alert_flash_timer = 0.0
         self.celebration_timer = 0.0
+        
+        # Architecture Comparison Screen (Modular vs End-to-End Deep Learning)
+        self.arch_modal = ArchitectureComparisonModal()
         
         # 1. Top Header Bar
         self.header_bg = Entity(
@@ -325,6 +329,8 @@ class DashboardUI:
             "[F]        : Cycle Weather Presets\n"
             "             (Rain, Snow, Fog, Night)\n"
             "[T]        : Toggle Torch Spotlight\n"
+            "[I] / [TAB]: Compare AI Architectures\n"
+            "             (Modular vs End-to-End DL)\n"
             "[B]        : Toggle 3D Laser Trackers\n"
             "[R]        : Reset Robot to Start\n"
             "[H]        : Toggle Controls Card"
@@ -376,6 +382,10 @@ class DashboardUI:
         self.show_help = not self.show_help
         self.help_bg.enabled = self.show_help
         self.help_text.enabled = self.show_help
+        
+    def toggle_arch_modal(self):
+        """Toggles the Deep Learning Architecture Comparison Screen (Req 5 & 6)."""
+        return self.arch_modal.toggle()
         
     def update(self, dt):
         self.alert_flash_timer += dt * 4.0
