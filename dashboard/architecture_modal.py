@@ -13,14 +13,16 @@ class ArchitectureComparisonModal(Entity):
         super().__init__(parent=camera.ui, **kwargs)
         self.is_open = False
         self.enabled = False
+        self._on_open_callback  = None
+        self._on_close_callback = None
         
-        # 1. Dark translucent backdrop covering screen
+        # 1. Dark solid backdrop covering screen completely
         self.backdrop = Entity(
             parent=self,
             model='quad',
-            scale=(2.0, 2.0),
-            position=(0, 0, 0.1),
-            color=rgba32(8, 12, 18, 245)
+            scale=(2.1, 1.3),
+            position=(0, 0, 0.02),
+            color=rgba32(8, 12, 18, 255)
         )
         
         # 2. Main Outer Card Frame
@@ -174,8 +176,18 @@ class ArchitectureComparisonModal(Entity):
     def toggle(self):
         self.is_open = not self.is_open
         self.enabled = self.is_open
+        if self.is_open:
+            if self._on_open_callback:
+                self._on_open_callback()
+        else:
+            if self._on_close_callback:
+                self._on_close_callback()
         return self.is_open
 
     def close(self):
-        self.is_open = False
-        self.enabled = False
+        if self.is_open:
+            self.is_open = False
+            self.enabled = False
+            if self._on_close_callback:
+                self._on_close_callback()
+

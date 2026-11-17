@@ -4,173 +4,260 @@ Simulation Limitations & Sim-to-Real Gap Modal — Key [L]
 Implements Student 2 Requirement 8:
   "Discuss safety checks, uncertainty and simulation limitations."
 
-Presents a full-screen panel explaining:
-  1. Simulation assumptions and what this sim CANNOT replicate
-  2. Sim-to-Real Gap (Domain Randomization, Sensor Noise, Physics fidelity)
-  3. Why rule-based supervisors are essential alongside neural inference
-  4. Real-world deployment checks required before any real road test
+Presented as an academic 2x2 grid dashboard with high-contrast cards:
+  Card 1 (Top-Left):     Simulation Assumptions (Graphics, Physics, Sensors)
+  Card 2 (Top-Right):    Sim-to-Real Gap & Domain Randomization
+  Card 3 (Bottom-Left):  Why Rule-Based Supervisors Remain Essential
+  Card 4 (Bottom-Right): Real-World Deployment Verification Checklist
 """
-from ursina import Entity, Text, camera, color
+from ursina import Entity, Text, camera
 from ursina.color import rgb32, rgba32
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-LIMITATION_CONTENT = [
-    # (section_title_text, section_title_color, body_lines_list, body_color)
-    (
-        "① SIM ASSUMPTIONS (WHAT THIS SIMULATOR CANNOT REPLICATE)",
-        (255, 215, 0),
-        [
-            "• Rendering: Synthetic Ursina/Panda3D graphics ≠ Real camera RGB noise, lens flare,",
-            "  motion blur, over/under-exposure or chromatic aberration.",
-            "• Physics:   Rigid-body collider physics. No deformable surfaces, tire slip,",
-            "  mud, gravel, wet pavement adhesion, or wind forces.",
-            "• Actors:    Programmatic pedestrians walk in fixed patterns.",
-            "  Real humans exhibit unpredictable gait, sudden stops, and crowd dynamics.",
-            "• Sensors:   LiDAR, Radar, Camera use geometric ground-truth math.",
-            "  Real sensors add Gaussian noise, ray misses, multipath reflections.",
-        ],
-        (200, 215, 230),
-    ),
-    (
-        "② THE SIM-TO-REAL GAP (DOMAIN RANDOMIZATION NEEDED)",
-        (60, 220, 80),
-        [
-            "• Visual Domain Gap: Neural networks trained on synthetic scenes often fail on",
-            "  real images due to texture, shadow, and lighting distribution mismatch.",
-            "• Fix: Domain Randomization — randomize textures, weather, lighting during",
-            "  training so the network generalises to real visual distributions.",
-            "• Sensor Noise Gap: Real LiDAR returns are sparse and noisy (beam divergence,",
-            "  rain droplet interference). Sim uses idealized dense point clouds.",
-            "• Fix: Add Gaussian noise, random dropouts, and calibration error to sim sensors.",
-            "• Latency Gap: Real edge-AI inference has variable compute latency (5–450ms).",
-            "  This sim injects latency only as a visual demonstration, not true async.",
-        ],
-        (180, 230, 200),
-    ),
-    (
-        "③ WHY RULE-BASED SUPERVISORS REMAIN ESSENTIAL",
-        (40, 220, 220),
-        [
-            "• Neural networks can fail silently — no exception, no crash, just wrong output.",
-            "• Safety Rule Engine acts as a deterministic failsafe independent of AI.",
-            "• This sim's Rule Engine enforces: Sidewalk Bounds, Zebra Crossing Only,",
-            "  Pedestrian Buffer (> 2m), Forward Clearance, Weather Speed Caps.",
-            "• False-Negative demo: When YOLO misses an obstacle, hardware proximity",
-            "  ultrasonic sensor at 1.5m fires the emergency stop regardless.",
-            "• Industry standard (ISO 26262 / SOTIF): Autonomous systems must pass",
-            "  FMEA analysis and demonstrate safety even under perception failure.",
-        ],
-        (160, 240, 240),
-    ),
-    (
-        "④ REAL-WORLD DEPLOYMENT CHECKLIST (PRE-FIELD REQUIREMENTS)",
-        (255, 100, 180),
-        [
-            "• HIL Testing: Run full sensor stack on Hardware-in-the-Loop bench first.",
-            "• Closed-track testing: Controlled environment with scripted pedestrians.",
-            "• Edge-case dataset: Collect 10,000+ failure images for adversarial retraining.",
-            "• Formal verification: Prove rule engine is deadlock-free using model checking.",
-            "• Regulator approval: UK DfT / US NHTSA autonomous vehicle submission required.",
-            "• Insurance & Liability: Real-time event data recorder (black box) mandatory.",
-        ],
-        (255, 180, 220),
-    ),
-]
-
-
 class SimLimitationsModal:
-    """Full-screen Simulation Limitations & Sim-to-Real Gap explanation panel."""
+    """Full-screen Simulation Limitations & Sim-to-Real Gap explanation panel (2x2 Grid)."""
 
     def __init__(self):
         self.is_open = False
         self._all_widgets = []
-        self._on_open_callback  = None   # called with True when opening
-        self._on_close_callback = None   # called when closing
+        self._on_open_callback  = None
+        self._on_close_callback = None
 
-        # ── Dark backdrop (created LAST so it draws on top via creation order) ─
-        # Note: actual occlusion of old HUD is handled via callbacks to DashboardUI
-
-        # ── Top title bar ─────────────────────────────────────────────────
-        self.title_bar = Entity(
-            parent=camera.ui,
-            model='quad',
-            scale=(2.1, 0.07),
-            position=(0, 0.59),
-            color=rgba32(30, 60, 100, 255),
-            enabled=False
-        )
-        self._all_widgets.append(self.title_bar)
-
-        self.title_text = Text(
-            text=(
-                "SIMULATION LIMITATIONS & SIM-TO-REAL GAP  —  "
-                "Student 2 ELA Requirement 8  |  [L] or [ESC] to Close"
-            ),
-            parent=camera.ui,
-            position=(0, 0.595),
-            scale=0.82,
-            color=rgb32(0, 215, 255),
-            origin=(0, 0.5),
-            enabled=False
-        )
-        self._all_widgets.append(self.title_text)
-
-        # ── Build content panels ───────────────────────────────────────────
-        y_cursor = 0.52
-        for sect_title, sect_col, body_lines, body_col in LIMITATION_CONTENT:
-            st = Text(
-                text=sect_title,
-                parent=camera.ui,
-                position=(-0.90, y_cursor),
-                scale=0.76,
-                color=rgb32(*sect_col),
-                origin=(-0.5, 0.5),
-                enabled=False
-            )
-            self._all_widgets.append(st)
-            y_cursor -= 0.038
-
-            full_body = "\n".join(body_lines)
-            bt = Text(
-                text=full_body,
-                parent=camera.ui,
-                position=(-0.90, y_cursor),
-                scale=0.66,
-                color=rgb32(*body_col),
-                origin=(-0.5, 0.5),
-                enabled=False
-            )
-            self._all_widgets.append(bt)
-            y_cursor -= len(body_lines) * 0.028 + 0.025
-
-        # ── Bottom disclaimer bar ─────────────────────────────────────────
-        self.disclaimer = Text(
-            text=(
-                "⚠  CONCEPTUAL DEMONSTRATION — No real AI weights or sensor hardware. "
-                "All detections are geometry-driven simulation for educational purposes."
-            ),
-            parent=camera.ui,
-            position=(0, -0.59),
-            scale=0.65,
-            color=rgb32(180, 130, 60),
-            origin=(0, 0.5),
-            enabled=False
-        )
-        self._all_widgets.append(self.disclaimer)
-
-        # ── Dark backdrop created AFTER content so it renders BEHIND modal text
-        # but OVER the old HUD. We hide old HUD via callback instead.
+        # ── 1. Full-screen dark opaque backdrop ────────────────────────────
         self.backdrop = Entity(
             parent=camera.ui,
             model='quad',
             scale=(2.1, 1.3),
             position=(0, 0),
-            color=rgba32(6, 8, 14, 252),
+            color=rgba32(8, 12, 18, 255),
             enabled=False
         )
-        # Insert backdrop at front of list so it enables/disables first
-        self._all_widgets.insert(0, self.backdrop)
+        self._all_widgets.append(self.backdrop)
+
+        # ── 2. Top Title Bar ───────────────────────────────────────────────
+        self.title_bar = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(1.82, 0.065),
+            position=(0, 0.44),
+            color=rgba32(18, 30, 48, 255),
+            enabled=False
+        )
+        self._all_widgets.append(self.title_bar)
+
+        self.title_text = Text(
+            text="SIMULATION LIMITATIONS & THE SIM-TO-REAL GAP (Student 2 ELA Requirement 8)",
+            parent=camera.ui,
+            position=(0, 0.445),
+            scale=0.88,
+            color=rgb32(0, 220, 255),
+            origin=(0, 0),
+            enabled=False
+        )
+        self._all_widgets.append(self.title_text)
+
+        # ── 3. Four Grid Cards (2x2 Layout) ────────────────────────────────
+        # Card 1: Top-Left (-0.46, 0.20)
+        c1_bg = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(0.88, 0.38),
+            position=(-0.46, 0.20),
+            color=rgba32(16, 24, 36, 250),
+            enabled=False
+        )
+        self._all_widgets.append(c1_bg)
+        c1_top = Entity(parent=camera.ui, model='quad', scale=(0.88, 0.005), position=(-0.46, 0.39), color=rgb32(255, 215, 0), enabled=False)
+        self._all_widgets.append(c1_top)
+        
+        c1_title = Text(
+            text="1. SIMULATION ASSUMPTIONS (WHAT SIM CANNOT REPLICATE)",
+            parent=camera.ui,
+            position=(-0.88, 0.365),
+            scale=0.74,
+            color=rgb32(255, 215, 0),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c1_title)
+        
+        c1_body = (
+            "• Rendering Gap: Synthetic Ursina/OpenGL graphics lack real camera noise,\n"
+            "  lens glare, chromatic aberration, sensor exposure lag, and motion blur.\n"
+            "• Physics Gap: Idealized kinematic movement with zero wheel slip, pavement\n"
+            "  micro-texture friction, water puddles, mud, or cross-wind perturbations.\n"
+            "• Agent Dynamics: Programmatic pedestrians follow scripted routes. Real humans\n"
+            "  demonstrate unpredictable trajectories, sudden stops, and erratic gestures.\n"
+            "• Idealized Sensors: LiDAR & Radar use mathematical ray-casting. Real sensors\n"
+            "  suffer from multipath reflections, beam divergence, and weather backscatter."
+        )
+        c1_text = Text(
+            text=c1_body,
+            parent=camera.ui,
+            position=(-0.88, 0.33),
+            scale=0.62,
+            color=rgb32(210, 225, 240),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c1_text)
+
+        # Card 2: Top-Right (0.46, 0.20)
+        c2_bg = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(0.88, 0.38),
+            position=(0.46, 0.20),
+            color=rgba32(16, 24, 36, 250),
+            enabled=False
+        )
+        self._all_widgets.append(c2_bg)
+        c2_top = Entity(parent=camera.ui, model='quad', scale=(0.88, 0.005), position=(0.46, 0.39), color=rgb32(60, 225, 100), enabled=False)
+        self._all_widgets.append(c2_top)
+        
+        c2_title = Text(
+            text="2. THE SIM-TO-REAL GAP (DOMAIN RANDOMIZATION)",
+            parent=camera.ui,
+            position=(0.04, 0.365),
+            scale=0.74,
+            color=rgb32(60, 225, 100),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c2_title)
+        
+        c2_body = (
+            "• Visual Domain Shift: Models trained purely on simulated imagery experience\n"
+            "  severe distribution shift and drop accuracy drastically in real deployment.\n"
+            "• Solution: Domain Randomization (DR) — aggressively perturb lighting,\n"
+            "  sun angles, road textures, precipitation, and colors during model training.\n"
+            "• Sensor Noise Emulation: Real LiDAR point clouds have dropouts and beam scatter.\n"
+            "  Training pipelines must inject Gaussian noise and ray-dropout models.\n"
+            "• Inference Latency Gap: Real edge chips (Jetson Orin) introduce 15–400ms lag.\n"
+            "  This simulator models latency queues (Key [U]) to test delayed response."
+        )
+        c2_text = Text(
+            text=c2_body,
+            parent=camera.ui,
+            position=(0.04, 0.33),
+            scale=0.62,
+            color=rgb32(200, 235, 210),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c2_text)
+
+        # Card 3: Bottom-Left (-0.46, -0.21)
+        c3_bg = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(0.88, 0.38),
+            position=(-0.46, -0.21),
+            color=rgba32(16, 24, 36, 250),
+            enabled=False
+        )
+        self._all_widgets.append(c3_bg)
+        c3_top = Entity(parent=camera.ui, model='quad', scale=(0.88, 0.005), position=(-0.46, -0.02), color=rgb32(0, 215, 255), enabled=False)
+        self._all_widgets.append(c3_top)
+        
+        c3_title = Text(
+            text="3. WHY RULE-BASED SUPERVISORS REMAIN MANDATORY",
+            parent=camera.ui,
+            position=(-0.88, -0.045),
+            scale=0.74,
+            color=rgb32(0, 215, 255),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c3_title)
+        
+        c3_body = (
+            "• Uncertified Nature of Deep Learning: Neural networks can fail silently\n"
+            "  without raising exceptions — misclassifying or completely missing actors.\n"
+            "• Deterministic Safety Envelope: Rule engines enforce provable bounds:\n"
+            "  Sidewalk boundaries, strict zebra-crossing only, and minimum safety buffers.\n"
+            "• Fail-Safe Proximity Supervisor: When YOLO drops a forward target (Key [U]),\n"
+            "  the hardware tactile/ultrasonic barrier at 1.5m triggers emergency braking.\n"
+            "• Regulatory Compliance: ISO 26262 & SOTIF standards require fail-operational\n"
+            "  supervisors that can safely halt the robot under complete AI perception failure."
+        )
+        c3_text = Text(
+            text=c3_body,
+            parent=camera.ui,
+            position=(-0.88, -0.08),
+            scale=0.62,
+            color=rgb32(190, 235, 245),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c3_text)
+
+        # Card 4: Bottom-Right (0.46, -0.21)
+        c4_bg = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(0.88, 0.38),
+            position=(0.46, -0.21),
+            color=rgba32(16, 24, 36, 250),
+            enabled=False
+        )
+        self._all_widgets.append(c4_bg)
+        c4_top = Entity(parent=camera.ui, model='quad', scale=(0.88, 0.005), position=(0.46, -0.02), color=rgb32(255, 120, 180), enabled=False)
+        self._all_widgets.append(c4_top)
+        
+        c4_title = Text(
+            text="4. REAL-WORLD DEPLOYMENT VERIFICATION CHECKLIST",
+            parent=camera.ui,
+            position=(0.04, -0.045),
+            scale=0.74,
+            color=rgb32(255, 120, 180),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c4_title)
+        
+        c4_body = (
+            "• Hardware-in-the-Loop (HIL) Testing: Execute camera & LiDAR pipelines on\n"
+            "  target embedded hardware (NVIDIA Jetson) before mounting on physical chassis.\n"
+            "• Closed-Course Track Trials: Validate emergency stop distance across wet,\n"
+            "  dry, and snowy surfaces using soft foam dummy obstacles and pedestrian targets.\n"
+            "• Adversarial Edge-Case Retraining: Collect 10k+ real-world failure frames\n"
+            "  (glare, dirty lenses, shadows) and perform continuous active learning.\n"
+            "• Black-Box Telemetry Logging: Tamper-proof crash recorder logs sensor frames,\n"
+            "  AI bounding boxes, and rule engine decisions at 50 Hz for regulatory audit."
+        )
+        c4_text = Text(
+            text=c4_body,
+            parent=camera.ui,
+            position=(0.04, -0.08),
+            scale=0.62,
+            color=rgb32(245, 205, 225),
+            origin=(-0.5, 0.5),
+            enabled=False
+        )
+        self._all_widgets.append(c4_text)
+
+        # ── 4. Bottom Footer Bar ───────────────────────────────────────────
+        self.footer_bar = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(1.82, 0.05),
+            position=(0, -0.45),
+            color=rgba32(18, 30, 48, 255),
+            enabled=False
+        )
+        self._all_widgets.append(self.footer_bar)
+
+        self.footer_text = Text(
+            text="[L] or [ESC] : Return to 3D Simulation  |  Notice: Conceptual Educational Demonstration (No Real Hardware)",
+            parent=camera.ui,
+            position=(0, -0.45),
+            scale=0.72,
+            color=rgb32(160, 200, 230),
+            origin=(0, 0),
+            enabled=False
+        )
+        self._all_widgets.append(self.footer_text)
 
     def _set_all_enabled(self, state):
         for w in self._all_widgets:
@@ -179,15 +266,11 @@ class SimLimitationsModal:
     def toggle(self):
         self.is_open = not self.is_open
         if self.is_open:
-            # 1. Hide existing HUD first
             if self._on_open_callback:
                 self._on_open_callback()
-            # 2. Show modal on top
             self._set_all_enabled(True)
         else:
-            # 1. Hide modal
             self._set_all_enabled(False)
-            # 2. Restore existing HUD
             if self._on_close_callback:
                 self._on_close_callback()
         return self.is_open
@@ -198,5 +281,3 @@ class SimLimitationsModal:
             self._set_all_enabled(False)
             if self._on_close_callback:
                 self._on_close_callback()
-
-

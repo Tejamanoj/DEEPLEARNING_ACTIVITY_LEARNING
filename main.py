@@ -543,7 +543,9 @@ def input(key):
         dashboard.toggle_help()
 
     elif key == 'escape':
-        if hasattr(dashboard, 'arch_modal') and dashboard.arch_modal.is_open:
+        if hasattr(dashboard, 'show_help') and dashboard.show_help:
+            dashboard.toggle_help()
+        elif hasattr(dashboard, 'arch_modal') and dashboard.arch_modal.is_open:
             dashboard.arch_modal.close()
         elif hasattr(dashboard, 'neural_hud') and dashboard.neural_hud.is_open:
             dashboard.neural_hud.close()

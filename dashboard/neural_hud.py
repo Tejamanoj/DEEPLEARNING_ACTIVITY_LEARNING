@@ -47,6 +47,8 @@ class NeuralPerceptionHUD:
         self._latency_jitter = 0.0
         self._conf_jitter = 0.0
         self._all_widgets = []
+        self._on_open_callback = None
+        self._on_close_callback = None
 
         # ── Background panel (right-center, non-obstructing)
         self.panel_bg = Entity(
@@ -253,12 +255,22 @@ class NeuralPerceptionHUD:
 
     def toggle(self):
         self.is_open = not self.is_open
-        self._set_all_enabled(self.is_open)
+        if self.is_open:
+            if self._on_open_callback:
+                self._on_open_callback()
+            self._set_all_enabled(True)
+        else:
+            self._set_all_enabled(False)
+            if self._on_close_callback:
+                self._on_close_callback()
         return self.is_open
 
     def close(self):
-        self.is_open = False
-        self._set_all_enabled(False)
+        if self.is_open:
+            self.is_open = False
+            self._set_all_enabled(False)
+            if self._on_close_callback:
+                self._on_close_callback()
 
     # ─────────────────────────────────────────────────────────────────────
     def update(self, dt, robot, sensor_mgr=None, failure_injector=None):
@@ -356,3 +368,4 @@ class NeuralPerceptionHUD:
             # Update only the confidence part
             prefix = existing.rsplit("| Conf:", 1)[0]
             row.text = f"{prefix}| Conf: {jit}%"
+
