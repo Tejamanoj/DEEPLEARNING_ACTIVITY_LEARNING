@@ -85,18 +85,11 @@ class SimLimitationsModal:
     def __init__(self):
         self.is_open = False
         self._all_widgets = []
+        self._on_open_callback  = None   # called with True when opening
+        self._on_close_callback = None   # called when closing
 
-        # ── Dark backdrop ──────────────────────────────────────────────────
-        self.backdrop = Entity(
-            parent=camera.ui,
-            model='quad',
-            scale=(2.1, 1.3),
-            position=(0, 0),
-            color=rgba32(6, 8, 14, 248),
-            enabled=False,
-            z=0.01
-        )
-        self._all_widgets.append(self.backdrop)
+        # ── Dark backdrop (created LAST so it draws on top via creation order) ─
+        # Note: actual occlusion of old HUD is handled via callbacks to DashboardUI
 
         # ── Top title bar ─────────────────────────────────────────────────
         self.title_bar = Entity(
@@ -104,7 +97,7 @@ class SimLimitationsModal:
             model='quad',
             scale=(2.1, 0.07),
             position=(0, 0.59),
-            color=rgba32(30, 60, 100, 240),
+            color=rgba32(30, 60, 100, 255),
             enabled=False
         )
         self._all_widgets.append(self.title_bar)
@@ -112,7 +105,7 @@ class SimLimitationsModal:
         self.title_text = Text(
             text=(
                 "SIMULATION LIMITATIONS & SIM-TO-REAL GAP  —  "
-                "Student 2 ELA Requirement 8  |  [ESC] or [L] to Close"
+                "Student 2 ELA Requirement 8  |  [L] or [ESC] to Close"
             ),
             parent=camera.ui,
             position=(0, 0.595),
@@ -126,7 +119,6 @@ class SimLimitationsModal:
         # ── Build content panels ───────────────────────────────────────────
         y_cursor = 0.52
         for sect_title, sect_col, body_lines, body_col in LIMITATION_CONTENT:
-            # Section title
             st = Text(
                 text=sect_title,
                 parent=camera.ui,
@@ -139,7 +131,6 @@ class SimLimitationsModal:
             self._all_widgets.append(st)
             y_cursor -= 0.038
 
-            # Body lines
             full_body = "\n".join(body_lines)
             bt = Text(
                 text=full_body,
@@ -151,15 +142,13 @@ class SimLimitationsModal:
                 enabled=False
             )
             self._all_widgets.append(bt)
-            # Estimate vertical space: each line ~0.028 units
             y_cursor -= len(body_lines) * 0.028 + 0.025
 
         # ── Bottom disclaimer bar ─────────────────────────────────────────
         self.disclaimer = Text(
             text=(
-                "⚠  This simulator is a CONCEPTUAL DEMONSTRATION. "
-                "No actual AI model weights or real sensor hardware are used. "
-                "All detections are geometry-driven simulation for educational purposes only."
+                "⚠  CONCEPTUAL DEMONSTRATION — No real AI weights or sensor hardware. "
+                "All detections are geometry-driven simulation for educational purposes."
             ),
             parent=camera.ui,
             position=(0, -0.59),
@@ -170,16 +159,44 @@ class SimLimitationsModal:
         )
         self._all_widgets.append(self.disclaimer)
 
+        # ── Dark backdrop created AFTER content so it renders BEHIND modal text
+        # but OVER the old HUD. We hide old HUD via callback instead.
+        self.backdrop = Entity(
+            parent=camera.ui,
+            model='quad',
+            scale=(2.1, 1.3),
+            position=(0, 0),
+            color=rgba32(6, 8, 14, 252),
+            enabled=False
+        )
+        # Insert backdrop at front of list so it enables/disables first
+        self._all_widgets.insert(0, self.backdrop)
+
     def _set_all_enabled(self, state):
         for w in self._all_widgets:
             w.enabled = state
 
     def toggle(self):
         self.is_open = not self.is_open
-        self._set_all_enabled(self.is_open)
+        if self.is_open:
+            # 1. Hide existing HUD first
+            if self._on_open_callback:
+                self._on_open_callback()
+            # 2. Show modal on top
+            self._set_all_enabled(True)
+        else:
+            # 1. Hide modal
+            self._set_all_enabled(False)
+            # 2. Restore existing HUD
+            if self._on_close_callback:
+                self._on_close_callback()
         return self.is_open
 
     def close(self):
-        self.is_open = False
-        self._set_all_enabled(False)
+        if self.is_open:
+            self.is_open = False
+            self._set_all_enabled(False)
+            if self._on_close_callback:
+                self._on_close_callback()
+
 

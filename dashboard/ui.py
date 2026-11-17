@@ -425,14 +425,64 @@ class DashboardUI:
     def toggle_neural_hud(self):
         """Toggles the Neural Perception HUD (Req 2 – YOLOv8 detections, Segmentation, TSR)."""
         if hasattr(self, 'neural_hud'):
+            if not self.neural_hud.is_open:
+                # Hide overlapping HUD cards when opening (non-full-screen, partial hide)
+                self.sensor_bg.enabled     = False
+                self.sensor_title.enabled  = False
+                self.safety_card_bg.enabled = False
+                self.help_bg.enabled       = False
+                self.help_text.enabled     = False
+            else:
+                # Restore on close
+                self.sensor_bg.enabled     = True
+                self.sensor_title.enabled  = True
+                self.safety_card_bg.enabled = True
+                self.help_bg.enabled       = self.show_help
+                self.help_text.enabled     = self.show_help
             return self.neural_hud.toggle()
         return False
         
     def toggle_sim_limits(self):
         """Toggles the Simulation Limitations & Sim-to-Real Gap modal (Req 8)."""
         if hasattr(self, 'sim_limits_modal'):
+            # Wire callbacks so modal can hide/restore the main HUD
+            self.sim_limits_modal._on_open_callback  = self._hide_main_hud
+            self.sim_limits_modal._on_close_callback = self._show_main_hud
             return self.sim_limits_modal.toggle()
         return False
+    
+    def _get_main_hud_widgets(self):
+        """Returns all permanent HUD widgets that should be hidden during full-screen modals."""
+        return [
+            self.header_bg, self.title_text, self.chassis_pill, self.mode_pill, self.cam_pill,
+            self.emergency_banner_bg, self.emergency_banner_text,
+            self.telemetry_bg, self.telemetry_title, self.speed_text, self.pos_text, self.progress_text,
+            self.rl_bg, self.rl_title, self.rl_score_text, self.rl_breakdown_text,
+            self.rl_penalties_breakdown_text, self.rl_penalty_text,
+            self.sensor_bg, self.sensor_title, self.target_text, self.forward_corridor_text,
+            self.weather_vision_text, self.torch_status_text,
+            self.failure_badge_bg, self.failure_badge_text,
+            self.safety_card_bg, self.safety_card_title,
+            self.rule1_text, self.rule2_text, self.rule3_text, self.rule4_text, self.rule5_text,
+            self.help_bg, self.help_text,
+        ]
+    
+    def _hide_main_hud(self):
+        for w in self._get_main_hud_widgets():
+            try:
+                w.enabled = False
+            except Exception:
+                pass
+    
+    def _show_main_hud(self):
+        for w in self._get_main_hud_widgets():
+            try:
+                w.enabled = True
+            except Exception:
+                pass
+        # Restore help visibility based on user preference
+        self.help_bg.enabled   = self.show_help
+        self.help_text.enabled = self.show_help
         
     def update(self, dt):
         self.alert_flash_timer += dt * 4.0
