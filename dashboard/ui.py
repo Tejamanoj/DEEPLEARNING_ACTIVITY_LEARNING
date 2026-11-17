@@ -8,6 +8,7 @@ from ursina import Entity, camera, color, Vec2, Text, window
 from ursina.color import rgb32, rgba32
 import math
 from .architecture_modal import ArchitectureComparisonModal
+from .neural_hud import NeuralPerceptionHUD
 
 class DashboardUI:
     def __init__(self, robot, camera_ctrl, navigator, sensor_mgr=None, safety_engine=None, rl_engine=None):
@@ -24,6 +25,9 @@ class DashboardUI:
         
         # Architecture Comparison Screen (Modular vs End-to-End Deep Learning)
         self.arch_modal = ArchitectureComparisonModal()
+        
+        # Neural Perception HUD (key [N]) — YOLOv8 detections + Segmentation + TSR
+        self.neural_hud = NeuralPerceptionHUD()
         
         # 1. Top Header Bar
         self.header_bg = Entity(
@@ -328,8 +332,8 @@ class DashboardUI:
         self.help_bg = Entity(
             parent=camera.ui,
             model='quad',
-            scale=(0.46, 0.44),
-            position=(0.65, -0.25),
+            scale=(0.46, 0.52),
+            position=(0.65, -0.21),
             color=rgba32(16, 20, 28, 205)
         )
         
@@ -350,8 +354,10 @@ class DashboardUI:
             "[T]        : Toggle Torch Spotlight\n"
             "[I] / [TAB]: Compare AI Architectures\n"
             "             (Modular vs End-to-End DL)\n"
+            "[N]        : Neural Perception HUD\n"
+            "             (YOLO + Seg + Sign Recog)\n"
             "[U]        : Cycle Perception Failures\n"
-            "             (False-Neg/Positive/Delay…)\n"
+            "             (False-Neg/Pos/Delay…)\n"
             "[B]        : Toggle 3D Laser Trackers\n"
             "[R]        : Reset Robot to Start\n"
             "[H]        : Toggle Controls Card"
@@ -407,6 +413,12 @@ class DashboardUI:
     def toggle_arch_modal(self):
         """Toggles the Deep Learning Architecture Comparison Screen (Req 5 & 6)."""
         return self.arch_modal.toggle()
+        
+    def toggle_neural_hud(self):
+        """Toggles the Neural Perception HUD (Req 2 – YOLOv8 detections, Segmentation, TSR)."""
+        if hasattr(self, 'neural_hud'):
+            return self.neural_hud.toggle()
+        return False
         
     def update(self, dt):
         self.alert_flash_timer += dt * 4.0
@@ -484,6 +496,11 @@ class DashboardUI:
                     
                 self.failure_badge_text.enabled = True
                 self.failure_badge_bg.enabled = True
+            
+        # Neural Perception HUD tick (key [N])
+        if hasattr(self, 'neural_hud') and self.neural_hud.is_open:
+            fi = getattr(self.sensor_mgr, 'failure_injector', None) if self.sensor_mgr else None
+            self.neural_hud.update(dt, self.robot, sensor_mgr=self.sensor_mgr, failure_injector=fi)
             
         # RL Telemetry
         if self.rl_engine:

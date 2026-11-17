@@ -407,6 +407,10 @@ def input(key):
     elif key in ('i', 'tab'):
         dashboard.toggle_arch_modal()
 
+    # ── Neural Perception HUD (YOLOv8 Detections + Segmentation + TSR) ─
+    elif key == 'n':
+        dashboard.toggle_neural_hud()
+
     # ── Perception Failure Injection Mode (Req 7 & 8) ───────────────────
     elif key == 'u':
         new_mode = sensor_mgr.cycle_failure_mode()
@@ -433,6 +437,8 @@ def input(key):
     elif key == 'escape':
         if hasattr(dashboard, 'arch_modal') and dashboard.arch_modal.is_open:
             dashboard.arch_modal.close()
+        elif hasattr(dashboard, 'neural_hud') and dashboard.neural_hud.is_open:
+            dashboard.neural_hud.close()
         else:
             application.quit()
 
